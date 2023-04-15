@@ -2,6 +2,8 @@
 .vscode/
 # ignore useless(deprecated) files
 x___*
+#ignore CUDA things
+nvvm/
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
