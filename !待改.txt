@@ -1,0 +1,10 @@
+要修正部分：
+Pruning後的Latency需重新測量
+
+新功能：
+丟入ESP32中實行
+量化(兩部分)：訓練前Datatype從float32轉成int8    or   訓練後整個模型量化
+比對Accuracy及Latency製成圖表
+
+tflite->h: git bash here:
+xxd -i model.tflite > model_data.h
