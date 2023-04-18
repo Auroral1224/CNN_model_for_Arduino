@@ -23,6 +23,7 @@ im = img.astype("float32") / 255.0
 im = np.expand_dims(im, 0)
 im = np.expand_dims(im, -1)
 print(im.shape)
+print(im)
 
 
 def plot_image(predictions_array, true_label, imgarg):

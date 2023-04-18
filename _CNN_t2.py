@@ -1,9 +1,9 @@
 # Model / data parameters
-from keras.callbacks import TerminateOnNaN, EarlyStopping
-from keras import layers
-from tensorflow import keras
-import tensorflow_model_optimization as tfmot
 import tensorflow as tf
+from tensorflow import keras
+from keras import layers
+from keras.callbacks import TerminateOnNaN, EarlyStopping
+import tensorflow_model_optimization as tfmot
 import numpy as np
 
 MODEL_SIZE = {}
@@ -33,8 +33,7 @@ y_test = keras.utils.to_categorical(y_test, num_classes)
 def get_model():
     model = keras.Sequential(
         [
-            keras.Input(shape=input_shape),
-            layers.Conv2D(32, kernel_size=(3, 3), activation="relu"),
+            layers.Conv2D(32, input_shape=input_shape, kernel_size=(3, 3), activation="relu"),
             layers.MaxPooling2D(pool_size=(3, 3)),
             layers.Conv2D(64, kernel_size=(3, 3), activation="relu"),
             layers.MaxPooling2D(pool_size=(3, 3)),

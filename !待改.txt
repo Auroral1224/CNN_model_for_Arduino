@@ -18,6 +18,7 @@ Pruning
 (All tflite)
 
 (1) Baseline model
-(2) Pruned model, not quantized
-(3) Pruned and quantized model
-(4) Pruned and QATed
+(2) Non pruned, but quantized
+(3) Pruned model, not quantized
+(4) Pruned and quantized model
+(5) Pruned and QATed
