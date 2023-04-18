@@ -1,7 +1,8 @@
 # Model / data parameters
 import tensorflow as tf
 from tensorflow import keras
-from keras import layers
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dropout, Dense
 from keras.callbacks import TerminateOnNaN, EarlyStopping
 import tensorflow_model_optimization as tfmot
 import numpy as np
@@ -31,17 +32,14 @@ y_test = keras.utils.to_categorical(y_test, num_classes)
 
 
 def get_model():
-    model = keras.Sequential(
-        [
-            layers.Conv2D(32, input_shape=input_shape, kernel_size=(3, 3), activation="relu"),
-            layers.MaxPooling2D(pool_size=(3, 3)),
-            layers.Conv2D(64, kernel_size=(3, 3), activation="relu"),
-            layers.MaxPooling2D(pool_size=(3, 3)),
-            layers.Flatten(),
-            layers.Dropout(0.5),
-            layers.Dense(num_classes, activation="softmax"),
-        ]
-    )
+    model = Sequential()
+    model.add(Conv2D(32, input_shape=input_shape, kernel_size=(3, 3), activation="relu"))
+    model.add(MaxPooling2D(pool_size=(3, 3)))
+    model.add(Conv2D(64, kernel_size=(3, 3), activation="relu"))
+    model.add(MaxPooling2D(pool_size=(3, 3)))
+    model.add(Flatten())
+    model.add(Dropout(0.5))
+    model.add(Dense(num_classes, activation="softmax"))
     return model
 
 
