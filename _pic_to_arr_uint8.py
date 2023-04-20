@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-from micromlgen.utils import port_array
 
 image_name = "ImgData\\4.jpg"
 
