@@ -3,17 +3,16 @@ import matplotlib.pyplot as plt  # pip install matplotlib
 from PIL import Image
 from keras.models import load_model
 import tensorflow as tf
-import time
+import timeit
 
 # Hide GPU from visible devices
 tf.config.set_visible_devices([], "GPU")
 
 class_names = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-# model_name = "non_pruned.h5"
-model_name = "pruned_model.h5"
-image_name = "4.jpg"
+model_names = ["baseline.h5", "pruned.h5"]
+model_name = model_names[1]
 image_label = 4
-
+image_name = f"ImgData\\{image_label}.jpg"
 
 image = Image.open(image_name).convert("L")
 image = image.resize((28, 28), Image.Resampling.LANCZOS)
@@ -47,7 +46,7 @@ def plot_image(predictions_array, true_label, imgarg):
 
 
 def plot_value_array(predictions_array, true_label, latency):
-    plt.title(f"Latency:{latency}ms")
+    plt.title(f"Latency:{latency}s")
     plt.grid(False)
     plt.xticks(range(10), class_names, rotation=45)
     plt.yticks([])
@@ -61,10 +60,11 @@ def plot_value_array(predictions_array, true_label, latency):
 
 model = load_model(model_name)
 model.predict(im[None, :, :])
-t1 = time.time()
-predict = model.predict(im[None, :, :])
-t2 = time.time()
-t = round(1000 * (t2 - t1), 2)
+t1 = timeit.default_timer()
+for i in range(100):
+    predict = model.predict(im[None, :, :])
+t2 = timeit.default_timer()
+t = round((t2 - t1), 3)
 
 plt.figure(figsize=(6, 3))
 plt.subplot(1, 2, 1)

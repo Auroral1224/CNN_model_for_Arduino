@@ -1,14 +1,11 @@
 # Model / data parameters
-import tensorflow as tf
-from tensorflow import keras
-from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Flatten, Dropout, Dense
 from keras.callbacks import TerminateOnNaN, EarlyStopping
+from keras import layers
+from tensorflow import keras
 import tensorflow_model_optimization as tfmot
+import tensorflow as tf
 import numpy as np
 
-MODEL_SIZE = {}
-ACCURACY = {}
 num_classes = 10
 input_shape = (28, 28, 1)
 
@@ -29,17 +26,19 @@ y_test = keras.utils.to_categorical(y_test, num_classes)
 
 
 # Build the unpruned model
-
-
 def get_model():
-    model = Sequential()
-    model.add(Conv2D(32, input_shape=input_shape, kernel_size=(3, 3), activation="relu"))
-    model.add(MaxPooling2D(pool_size=(3, 3)))
-    model.add(Conv2D(64, kernel_size=(3, 3), activation="relu"))
-    model.add(MaxPooling2D(pool_size=(3, 3)))
-    model.add(Flatten())
-    model.add(Dropout(0.5))
-    model.add(Dense(num_classes, activation="softmax"))
+    model = keras.Sequential(
+        [
+            keras.Input(shape=input_shape),
+            layers.Conv2D(16, kernel_size=(3, 3), activation="relu"),
+            layers.MaxPooling2D(pool_size=(2, 2)),
+            layers.Conv2D(32, kernel_size=(3, 3), activation="relu"),
+            layers.MaxPooling2D(pool_size=(2, 2)),
+            layers.Flatten(),
+            layers.Dropout(0.5),
+            layers.Dense(num_classes, activation="softmax"),
+        ]
+    )
     return model
 
 
@@ -53,6 +52,33 @@ esl = EarlyStopping(
 esa = EarlyStopping(
     monitor="val_accuracy", patience=4, mode="auto", restore_best_weights=True
 )
+
+
+def tflite_converter_for_int_quant(model):
+    def representative_data_gen():
+        for input_value in (
+            tf.data.Dataset.from_tensor_slices(x_train).batch(1).take(100)
+        ):
+            yield [input_value]
+
+    model_converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    model_converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    model_converter.representative_dataset = representative_data_gen
+    # Ensure that if any ops can't be quantized, the converter throws an error
+    model_converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+    # Set the input and output tensors to uint8 (APIs added in r2.3)
+    model_converter.inference_input_type = tf.uint8
+    model_converter.inference_output_type = tf.uint8
+    return model_converter
+
+
+def save_tflite_model(model, model_converter, model_name):
+    if model_converter == None:
+        model_converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    model = model_converter.convert()
+    with open(f"{model_name}.tflite", "wb") as f:
+        f.write(model)
+
 
 # Train the unpruned model
 
@@ -75,13 +101,12 @@ baseline_model.fit(
     callbacks=[ton, esl, esa],
 )
 
-converter = tf.lite.TFLiteConverter.from_keras_model(baseline_model)
-tflite_model = converter.convert()
-with open("baseline_model.tflite", "wb") as f:
-    f.write(tflite_model)
-# KD begin
+# Save baseline h5 model
+baseline_model.save("baseline.h5")
 
-# KD end
+# Save baseline tflite model
+save_tflite_model(baseline_model, None, "baseline")
+
 # Pruning process
 prune_low_magnitude = tfmot.sparsity.keras.prune_low_magnitude
 
@@ -118,48 +143,42 @@ model_for_pruning.fit(
     callbacks=[ton, esl, esa, ups],
 )
 
-# Remove pruning wrappers and save
+# Remove pruning wrappers
 model_for_export = tfmot.sparsity.keras.strip_pruning(model_for_pruning)
 model_for_export.summary()
 
-# Convert pruned h5 model to tflite directly w/o quantization
-converter = tf.lite.TFLiteConverter.from_keras_model(model_for_export)
-tflite_model = converter.convert()
-with open("pruned_not_quantized.tflite", "wb") as f:
-    f.write(tflite_model)
+# Save pruned h5 model
+model_for_export.save("pruned.h5")
 
-# After pruning, use "dynamic range quantization" to quantize the pruned model (Post-Traning Quantization)
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
-tflite_model = converter.convert()
-with open("pruned_quantized.tflite", "wb") as f:
-    f.write(tflite_model)
+# Save pruned tflite model
+save_tflite_model(model_for_export, None, "pruned")
 
-quantize_model = tfmot.quantization.keras.quantize_model
-
-# q_aware stands for for quantization aware.
-q_aware_model = quantize_model(model_for_export)
-
-# `quantize_model` requires a recompile.
-q_aware_model.compile(
-    loss="categorical_crossentropy",
-    optimizer="adam",
-    metrics=["accuracy"],
+# Save pruned and integer-quantized model
+save_tflite_model(
+    model_for_export,
+    tflite_converter_for_int_quant(model_for_export),
+    "pruned_quantized",
 )
 
-q_aware_model.summary()
+# quantize_model = tfmot.quantization.keras.quantize_model
 
-q_aware_model.fit(
-    x_train,
-    y_train,
-    batch_size=batch_size,
-    epochs=2,
-    validation_split=validation_split,
-    callbacks=[ton, esl, esa],
-)
+# # q_aware stands for for quantization aware.
+# q_aware_model = quantize_model(model_for_export)
 
-# After this, you have an actually quantized model with int8 weights and uint8 activations
-converter = tf.lite.TFLiteConverter.from_keras_model(q_aware_model)
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
-quantized_tflite_model = converter.convert()
-with open("pruned_QATed.tflite", "wb") as f:
-    f.write(tflite_model)
+# # `quantize_model` requires a recompile.
+# q_aware_model.compile(
+#     loss="categorical_crossentropy",
+#     optimizer="adam",
+#     metrics=["accuracy"],
+# )
+
+# q_aware_model.summary()
+
+# q_aware_model.fit(
+#     x_train,
+#     y_train,
+#     batch_size=batch_size,
+#     epochs=2,
+#     validation_split=validation_split,
+#     callbacks=[ton, esl, esa],
+# )

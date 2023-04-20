@@ -1,7 +1,9 @@
 # ignore .vscode
 .vscode/
+# ignore input image data folder
+ImgData/
 # ignore useless(deprecated) files
-x___*
+x_*
 #ignore CUDA things
 nvvm/
 
