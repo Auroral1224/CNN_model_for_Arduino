@@ -1,11 +1,3 @@
-要修正部分：
-Pruning後的Latency需重新測量
-
-新功能：
-丟入ESP32中實行
-量化(兩部分)：訓練前Datatype從float32轉成int8    or   訓練後量化(V)(Dynamic range quantization)
-比對Accuracy及Latency製成圖表
-
 tflite->h: git bash here:
 xxd -i model.tflite > model_data.h
 
@@ -15,10 +7,12 @@ Pruning
 
 ----
 
-(All tflite)
+(h5)
 
 (1) Baseline model
-(2) Non pruned, but quantized
+(2) Pruned model
+
+(tflite)
+
 (3) Pruned model, not quantized
 (4) Pruned and quantized model
-(5) Pruned and QATed
