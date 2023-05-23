@@ -1,0 +1,11 @@
+#
+# Main component of TF Micro project 'CNN_ESP32'.
+#
+
+idf_component_register(
+    SRCS
+        "main.cc"
+        "main_func.cc"
+        "pruned_quantized.cc"
+        "pruned.cc"
+    INCLUDE_DIRS "")

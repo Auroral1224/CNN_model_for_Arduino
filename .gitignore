@@ -2,6 +2,9 @@
 .vscode/
 # ignore input image data folder
 ImgData/
+# ignore esp-idf stuff
+Expressif/
+esp-idf/
 # ignore useless(deprecated) files
 x_*
 #ignore CUDA things
