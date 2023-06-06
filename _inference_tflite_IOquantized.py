@@ -56,7 +56,6 @@ def plot_value_array(predictions_array, true_label, latency):
 
 
 # Load TFLite model and allocate tensors.
-t1 = timeit.default_timer()
 interpreter = tf.lite.Interpreter(model_path=model_name)
 interpreter.allocate_tensors()
 
@@ -65,12 +64,13 @@ input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
 interpreter.set_tensor(input_details[0]["index"], im)
+t1 = timeit.default_timer()
 for i in range(100):
     interpreter.invoke()
 output_data = interpreter.get_tensor(output_details[0]["index"])
 t2 = timeit.default_timer()
 t = round((t2 - t1), 3)
-
+t = t / 100
 
 plt.figure(figsize=(6, 3))
 plt.subplot(1, 2, 1)
